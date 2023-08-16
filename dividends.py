@@ -3,24 +3,27 @@ import pandas as pd
 import pandas_market_calendars as mcal
 from datetime import datetime
 from datetime import timedelta
+import math
 
 def main():
-    startDate = getStartDate(2015)
-    endDate = getEndDate(2016)
+    startDate = getStartDate(2010)
+    endDate = getEndDate(2022)
     funds = 10000
-    company = "mmm"
+    company = "psx"
+    taxPercent = 0.22
 
     ticker = yf.Ticker(company)
     divList = getDividendList(ticker.dividends, startDate, endDate)
     
     for div in divList:
         exDivDate = div[0]
-        divAmount = div[1]
+        divPrice = round(div[1], 2)
         buyDate = getDate(exDivDate, -1, 1)
-        buyPrice = getBuyPrice(ticker, buyDate)
+        buyPrice = round(getBuyPrice(ticker, buyDate), 2)
         sellDate = getDate(exDivDate, 1, 2)
-        sellPrice = getSellPrice(ticker, sellDate)
-        # print("exDiv Date: " + str(exDivDate.date()) + "\tDiv Amount: " + str(round(divAmount, 2)) + "\t\tBuy Date: " + str(buyDate.date()) + "\tBuy Price: " + str(round(buyPrice, 2)) + "\t\tSell Date: " + str(sellDate.date()) + "\tSell Price: " + str(round(sellPrice, 2)))
+        sellPrice = round(getSellPrice(ticker, sellDate), 2)
+        # print("exDiv Date: " + str(exDivDate.date()) + "\tDiv Price: " + str(divPrice) + "\t\tBuy Date: " + str(buyDate.date()) + "\tBuy Price: " + str(buyPrice) + "\t\tSell Date: " + str(sellDate.date()) + "\tSell Price: " + str(sellPrice))
+        funds = captureDividends(funds, taxPercent, buyPrice, sellPrice, divPrice, buyDate, sellDate)
 
 
 def getDividendList(tickerDividends, startDate, endDate):
@@ -56,6 +59,31 @@ def getBuyPrice(ticker, date):
 def getSellPrice(ticker, date):
     stockHistory = ticker.history(start=date, end=getDate(date,1,1))
     return stockHistory.iloc[0]['Open']
+
+def captureDividends(funds, taxPercent, buyPrice, sellPrice, divPrice, buyDate, sellDate):
+    numShares = math.floor(funds/buyPrice)
+    totalBuyAmount = numShares * buyPrice
+    funds = funds - totalBuyAmount
+    print('\nBuy Date: ' + str(buyDate.date()))
+    print('Bought ' + str(numShares) + ' shares for $' + str(buyPrice) + ' per share. Total: $' + str(totalBuyAmount))
+    print('Remaining funds: $' + str(funds))
+
+    totalSellAmount = numShares * sellPrice
+    funds = funds + totalSellAmount + (divPrice * numShares)
+    print('\nSell Date: ' + str(sellDate.date()))
+    print('Sold ' + str(numShares) + ' shares for $' + str(sellPrice) + ' per share. Total: $' + str(totalSellAmount))
+    print('Received ' + str(numShares) + ' dividends for $' + str(divPrice) + ' per share. Total: $' + str(divPrice * numShares))
+
+    if totalSellAmount > totalBuyAmount:
+        tax = taxPercent * ((totalSellAmount - totalBuyAmount) + (divPrice * numShares))
+    else:
+        tax = taxPercent * (divPrice * numShares)
+    funds = funds - tax
+    print('\nTotal tax on gains: $' + str(tax))
+    print('Funds left after capture: $' + str(funds))
+    return funds
+
+
 
 if __name__ == '__main__':
     main()
