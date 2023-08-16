@@ -6,10 +6,14 @@ from datetime import timedelta
 import math
 
 def main():
+    # Starting and ending years. It will use all dividends between January 1 of the start year and December 31 of the End year
     startDate = getStartDate(2010)
     endDate = getEndDate(2022)
+    # Starting fund amount in USD
     funds = 10000
-    company = "psx"
+    # Company ticker
+    company = "AAPL"
+    # Tax percent
     taxPercent = 0.22
 
     ticker = yf.Ticker(company)
