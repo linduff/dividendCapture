@@ -7,7 +7,7 @@ from datetime import timedelta
 def main():
     startDate = getStartDate(2015)
     endDate = getEndDate(2016)
-    purse = 10000
+    funds = 10000
     company = "mmm"
 
     ticker = yf.Ticker(company)
